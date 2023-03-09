@@ -20,18 +20,47 @@ const pool = new Pool({
  * @param {String} email The email of the user.
  * @return {Promise<{}>} A promise to the user.
  */
-const getUserWithEmail = function(email) {
-  let user;
-  for (const userId in users) {
-    user = users[userId];
-    if (user.email.toLowerCase() === email.toLowerCase()) {
-      break;
-    } else {
-      user = null;
-    }
-  }
-  return Promise.resolve(user);
+// const getUserWithEmail = function(email) {
+//   let user;
+//   for (const userId in users) {
+//     user = users[userId];
+//     if (user.email.toLowerCase() === email.toLowerCase()) {
+//       break;
+//     } else {
+//       user = null;
+//     }
+//   }
+//   return Promise.resolve(user);
+// }
+
+const getUserWithEmail = (email) => {
+  const queryString = `
+    SELECT * FROM users
+    WHERE email = $1;
+  `;
+  const values = [email]
+
+   return pool
+      .query(queryString, values)
+      .then(result => {
+        console.log(result.rows[0])
+        if(email === result.rows[0].email){
+          return result.rows[0]
+        } else {
+          return null
+        }
+      })
+      .catch(error => {
+        console.log(error)
+        return null
+      })
+
 }
+
+// getUserWithEmail('tristanjacobs@gmail.com')
+
+
+
 exports.getUserWithEmail = getUserWithEmail;
 
 /**
@@ -39,9 +68,35 @@ exports.getUserWithEmail = getUserWithEmail;
  * @param {string} id The id of the user.
  * @return {Promise<{}>} A promise to the user.
  */
-const getUserWithId = function(id) {
-  return Promise.resolve(users[id]);
+// const getUserWithId = function(id) {
+//   return Promise.resolve(users[id]);
+// }
+
+const getUserWithId = (id) => {
+  const queryString = `
+  SELECT * FROM users
+  WHERE id = $1;
+`;
+  const values = [id]
+
+    
+  return pool
+  .query(queryString, values)
+  .then(result => {
+    console.log(result.rows[0])
+    if(id === result.rows[0].id){
+      return result.rows[0]
+    } else {
+      return null
+    }
+  })
+  .catch(error => {console.log(error)})
+
 }
+
+// getUserWithId(2)
+
+
 exports.getUserWithId = getUserWithId;
 
 
@@ -50,12 +105,35 @@ exports.getUserWithId = getUserWithId;
  * @param {{name: string, password: string, email: string}} user
  * @return {Promise<{}>} A promise to the user.
  */
-const addUser =  function(user) {
-  const userId = Object.keys(users).length + 1;
-  user.id = userId;
-  users[userId] = user;
-  return Promise.resolve(user);
+// const addUser =  function(user) {
+//   const userId = Object.keys(users).length + 1;
+//   user.id = userId;
+//   users[userId] = user;
+//   return Promise.resolve(user);
+// }
+
+const addUser = (user) => {
+  const queryString = `
+  INSERT INTO users (name, email, password)
+  VALUES ($1, $2, $3)
+  RETURNING *;
+`;
+  const values = [user.name, user.email, user.password]
+
+    
+  return pool.query(queryString, values)
+      .then(result => {
+        console.log(result.rows[0])
+        return result
+      })
+      .catch(error => {console.log(error)})
 }
+
+// addUser({
+//   name: 'tessfbs2',
+//   email: 'tessfbs2@gmail.com',
+//   password: '$2b$1222$L6fwIaBp6pK67rWHJee3COz.myYqA23oIwrs4VjvcruNDpWbpxH5C'
+// })
 exports.addUser = addUser;
 
 /// Reservations
@@ -96,6 +174,7 @@ const getAllProperties = (options, limit = 10) => {
     })
     .catch((err) => {
       console.log(err.message);
+      return err;
     });
 };
 
