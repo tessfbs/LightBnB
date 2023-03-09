@@ -129,11 +129,6 @@ const addUser = (user) => {
       .catch(error => {console.log(error)})
 }
 
-// addUser({
-//   name: 'tessfbs2',
-//   email: 'tessfbs2@gmail.com',
-//   password: '$2b$1222$L6fwIaBp6pK67rWHJee3COz.myYqA23oIwrs4VjvcruNDpWbpxH5C'
-// })
 exports.addUser = addUser;
 
 /// Reservations
@@ -143,9 +138,37 @@ exports.addUser = addUser;
  * @param {string} guest_id The id of the user.
  * @return {Promise<[{}]>} A promise to the reservations.
  */
-const getAllReservations = function(guest_id, limit = 10) {
-  return getAllProperties(null, 2);
+// const getAllReservations = function(guest_id, limit = 10) {
+//   return getAllProperties(null, 2);
+// }
+
+const getAllReservations = (guest_id, limit = 10) => {
+  const queryString = `
+  SELECT reservations.id as reservation_id, title, cost_per_night,number_of_bathrooms, number_of_bedrooms, reservations.start_date, AVG(rating) as average_rating, parking_spaces, thumbnail_photo_url
+  FROM reservations
+  JOIN properties ON properties.id = reservations.property_id
+  JOIN property_reviews ON properties.id = property_reviews.property_id
+  WHERE reservations.guest_id = $1
+  GROUP BY reservations.id , title, cost_per_night, number_of_bathrooms, number_of_bedrooms, parking_spaces, thumbnail_photo_url
+  ORDER BY start_date
+  LIMIT $2;
+  `;
+
+  values = [guest_id, limit = 10];
+
+  return pool
+     .query(queryString, values)
+     .then(result => {
+       console.log(result.rows)
+       return result.rows
+     })
+     .catch(error => {console.log(error)})
 }
+
+// getAllReservations(4,2)
+
+
+
 exports.getAllReservations = getAllReservations;
 
 /// Properties
